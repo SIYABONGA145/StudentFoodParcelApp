@@ -73,6 +73,4 @@ text
 📄 License
 This project is licensed under the MIT License.
 
-text
 
-*(Note: Just double-check the "Default Login Credentials" section one last time to make sure those are the real emails/passwords your app creates. If not, just change them in the text!)*
