@@ -1,0 +1,232 @@
+﻿@model IEnumerable<StudentFoodParcelApp.Models.DistributionCollectionItemViewModel>
+@{
+    ViewData["Title"] = "Parcel Distributions";
+}
+
+<form id="afForm" class="d-none">@Html.AntiForgeryToken()</form>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Parcel Distributions & Allocation</h3>
+        <p class="text-muted small mb-0">Manually schedule collection dates, times, and venues for approved student applications.</p>
+    </div>
+    <!-- New Bulk Action Button -->
+    <button type="button" class="btn btn-success fw-semibold" onclick="openBulkScheduleModal()">
+        <i class="bi bi-calendar-check me-1"></i>Bulk Schedule Selected
+    </button>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3 bg-white">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th class="ps-3" style="width: 40px;">
+                        <!-- Select All Checkbox -->
+                        <input type="checkbox" class="form-check-input" id="selectAllCheckbox" onclick="toggleAllCheckboxes(this)">
+                    </th>
+                    <th>Reference</th>
+                    <th>Student No.</th>
+                    <th>Student Name</th>
+                    <th>Cycle</th>
+                    <th>Status</th>
+                    <th class="text-center">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model == null || !Model.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">No approved applications pending distribution schedule.</td></tr>
+                }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="ps-3">
+                                <!-- Row Checkbox -->
+                                <input type="checkbox" class="form-check-input student-checkbox" value="@item.RequestId">
+                            </td>
+                            <td class="fw-bold">FPS-@item.RequestId.ToString("D4")</td>
+                            <td>@item.StudentNumber</td>
+                            <td class="fw-semibold">@item.StudentName</td>
+                            <td><span class="badge bg-light text-dark border">@item.CycleName</span></td>
+                            <td><span class="badge bg-success px-3 py-2 text-white">@item.CollectionStatus</span></td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-primary fw-semibold" onclick="openScheduleModal(@item.RequestId, '@item.StudentName', '@item.StudentNumber')">
+                                    <i class="bi bi-calendar-event me-1"></i>Assign & Schedule
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Schedule Modal (Used for Both Single and Bulk) -->
+<div class="modal fade" id="scheduleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3">
+                <h5 class="modal-title fw-bold" id="modalTitle">Schedule Food Parcel Collection</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Hidden field for Single ID -->
+                <input type="hidden" id="modalRequestId" />
+
+                <!-- Target Student Field (Hidden during Bulk) -->
+                <div class="mb-3" id="singleStudentDiv">
+                    <label class="form-label fw-semibold">Target Student</label>
+                    <input type="text" id="modalStudentInfo" class="form-control bg-light" readonly />
+                </div>
+
+                <!-- Bulk Info Field (Hidden during Single) -->
+                <div class="mb-3 d-none" id="bulkStudentDiv">
+                    <label class="form-label fw-semibold">Target Students</label>
+                    <input type="text" id="modalBulkInfo" class="form-control bg-light" readonly />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Distribution Date</label>
+                    <input type="date" id="modalDistDate" class="form-control" required value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Distribution Time</label>
+                    <input type="time" id="modalDistTime" class="form-control" required value="10:00" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Venue</label>
+                    <input type="text" id="modalVenueName" class="form-control" placeholder="Enter venue name (e.g. Main Hall)" required />
+                </div>
+            </div>
+            <div class="modal-footer border-top bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary px-4 fw-semibold" id="btnSaveSchedule" onclick="submitSchedule()">Save Schedule</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let scheduleModal = null;
+        let isBulkMode = false; // Flag to track if we are doing single or bulk
+
+        // --- SINGLE SCHEDULE LOGIC ---
+        function openScheduleModal(requestId, studentName, studentNumber) {
+            isBulkMode = false;
+            document.getElementById('modalTitle').innerText = "Schedule Food Parcel Collection";
+            document.getElementById('singleStudentDiv').classList.remove('d-none');
+            document.getElementById('bulkStudentDiv').classList.add('d-none');
+
+            document.getElementById('modalRequestId').value = requestId;
+            document.getElementById('modalStudentInfo').value = `${studentName} (${studentNumber}) - Ref: FPS-${requestId.toString().padStart(4, '0')}`;
+            document.getElementById('modalVenueName').value = '';
+
+            document.getElementById('btnSaveSchedule').onclick = submitSingleSchedule;
+
+            scheduleModal = new bootstrap.Modal(document.getElementById('scheduleModal'));
+            scheduleModal.show();
+        }
+
+        function submitSingleSchedule() {
+            const requestId = parseInt(document.getElementById('modalRequestId').value);
+            const distributionDate = document.getElementById('modalDistDate').value;
+            const distributionTime = document.getElementById('modalDistTime').value;
+            const venueName = document.getElementById('modalVenueName').value.trim();
+
+            if (!distributionDate || !distributionTime || !venueName) {
+                alert("Please complete all required fields.");
+                return;
+            }
+
+            fetch('@Url.Action("CreateDistribution", "SrcAdmin")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('#afForm input[name="__RequestVerificationToken"]').value },
+                body: JSON.stringify({ requestId, distributionDate, distributionTime, venueName })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert(data.message);
+                }
+            });
+        }
+
+        // --- BULK SCHEDULE LOGIC ---
+        function toggleAllCheckboxes(source) {
+            const checkboxes = document.querySelectorAll('.student-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+        }
+
+        function openBulkScheduleModal() {
+            const selectedIds = Array.from(document.querySelectorAll('.student-checkbox:checked')).map(cb => parseInt(cb.value));
+
+            if (selectedIds.length === 0) {
+                alert("Please select at least one student using the checkboxes.");
+                return;
+            }
+
+            isBulkMode = true;
+            document.getElementById('modalTitle').innerText = "Bulk Schedule Food Parcel Collections";
+            document.getElementById('singleStudentDiv').classList.add('d-none');
+            document.getElementById('bulkStudentDiv').classList.remove('d-none');
+
+            document.getElementById('modalBulkInfo').value = `${selectedIds.length} students selected for scheduling`;
+            document.getElementById('modalVenueName').value = '';
+
+            document.getElementById('btnSaveSchedule').onclick = submitBulkSchedule;
+
+            scheduleModal = new bootstrap.Modal(document.getElementById('scheduleModal'));
+            scheduleModal.show();
+        }
+
+        function submitBulkSchedule() {
+            const selectedIds = Array.from(document.querySelectorAll('.student-checkbox:checked')).map(cb => parseInt(cb.value));
+            const distributionDate = document.getElementById('modalDistDate').value;
+            const distributionTime = document.getElementById('modalDistTime').value;
+            const venueName = document.getElementById('modalVenueName').value.trim();
+
+            if (!distributionDate || !distributionTime || !venueName) {
+                alert("Please complete all required fields.");
+                return;
+            }
+
+            // Change button text to show it's working
+            const btn = document.getElementById('btnSaveSchedule');
+            btn.innerText = "Saving...";
+            btn.disabled = true;
+
+            fetch('@Url.Action("CreateBulkDistribution", "SrcAdmin")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('#afForm input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify({ requestIds: selectedIds, distributionDate, distributionTime, venueName })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert(data.message);
+                    btn.innerText = "Save Schedule";
+                    btn.disabled = false;
+                }
+            })
+            .catch(err => {
+                alert("An error occurred while communicating with the server.");
+                btn.innerText = "Save Schedule";
+                btn.disabled = false;
+            });
+        }
+    </script>
+}

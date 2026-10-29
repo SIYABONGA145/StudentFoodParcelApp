@@ -1,0 +1,100 @@
+﻿@model IEnumerable<StudentFoodParcelApp.Models.DistributionCollectionItemViewModel>
+@{
+    ViewData["Title"] = "Student Collections";
+}
+
+<form id="afForm" class="d-none">@Html.AntiForgeryToken()</form>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Parcel Collection Attendance</h3>
+        <p class="text-muted small mb-0">Record whether approved and scheduled students actually collected their food parcels.</p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-3">
+        <div class="input-group">
+            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="collSearchInput" class="form-control border-start-0 bg-light" placeholder="Search by student number, name, or Reference..." onkeyup="filterCollections()" />
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3 bg-white">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="collectionsTable">
+            <thead class="table-dark">
+                <tr>
+                    <th class="ps-3">Reference</th>
+                    <th>Student No.</th>
+                    <th>Student Name</th>
+                    <th>Cycle</th>
+                    <th>Schedule Details</th>
+                    <th>Collection Status</th>
+                    <th class="text-center pe-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model == null || !Model.Any())
+                {
+                    <tr><td colspan="7" class="text-center py-4 text-muted">No scheduled collections found.</td></tr>
+                }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        var badgeClass = item.CollectionStatus == "COLLECTED" ? "bg-success text-white" : item.CollectionStatus == "NOT COLLECTED" ? "bg-danger text-white" : "bg-warning text-dark";
+                        <tr class="coll-row" data-request-id="@item.RequestId">
+                            <td class="ps-3 fw-bold">FPS-@item.RequestId.ToString("D4")</td>
+                            <td>@item.StudentNumber</td>
+                            <td class="fw-semibold">@item.StudentName</td>
+                            <td><span class="badge bg-light text-dark border">@item.CycleName</span></td>
+                            <td>
+                                <small class="d-block text-dark fw-semibold"><i class="bi bi-geo-alt-fill text-danger me-1"></i>@item.VenueName</small>
+                                <small class="text-muted"><i class="bi bi-calendar-event me-1"></i>@item.DistributionDate @item.DistributionTime</small>
+                            </td>
+                            <td><span class="badge px-3 py-2 text-uppercase status-badge @badgeClass">@item.CollectionStatus</span></td>
+                            <td class="text-center pe-3">
+                                <button class="btn btn-sm btn-success me-1" onclick="updateCollection(@item.RequestId, 'COLLECTED')">
+                                    <i class="bi bi-check-circle me-1"></i>Mark Collected
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="updateCollection(@item.RequestId, 'NOT COLLECTED')">
+                                    <i class="bi bi-x-circle me-1"></i>Not Collected
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function updateCollection(requestId, collectionStatus) {
+        fetch('@Url.Action("MarkCollectionStatus", "SrcAdmin")', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('#afForm input[name="__RequestVerificationToken"]').value },
+            body: JSON.stringify({ requestId, collectionStatus })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+
+    function filterCollections() {
+        const query = document.getElementById('collSearchInput').value.toLowerCase();
+        document.querySelectorAll('.coll-row').forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(query) ? '' : 'none';
+        });
+    }
+</script>
+}

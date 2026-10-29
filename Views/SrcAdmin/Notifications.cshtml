@@ -1,0 +1,55 @@
+﻿@model IEnumerable<StudentFoodParcelApp.Models.Notification>
+
+@{
+    Layout = "~/Views/Shared/_SrcAdminLayout.cshtml";
+    ViewData["Title"] = "SRC Admin Notifications";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">SRC Notifications</h3>
+        <p class="text-muted small mb-0">Track new student application submissions, withdrawals, and updates across your campus.</p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3 bg-white">
+    <div class="card-body p-0">
+        @if (Model == null || !Model.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-bell-slash fs-1 d-block mb-2 text-secondary"></i>
+                <p class="mb-0 fw-semibold">No notifications received yet.</p>
+                <small class="text-muted">New student requests and system updates for your campus will appear here.</small>
+            </div>
+        }
+        else
+        {
+            <div class="list-group list-group-flush">
+                @foreach (var note in Model)
+                {
+                    <div class="list-group-item p-3 border-bottom">
+                        <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                            <h6 class="fw-bold mb-0 text-dark">
+                                @if (note.Notificationtype == "APPLICATION_WITHDRAWN")
+                                {
+                                    <i class="bi bi-exclamation-circle-fill text-danger me-2"></i>
+                                }
+                                else if (note.Notificationtype == "COLLECTION_READY")
+                                {
+                                    <i class="bi bi-geo-alt-fill text-success me-2"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-bell-fill text-warning me-2"></i>
+                                }
+                                @note.Title
+                            </h6>
+                            <small class="text-muted">@note.Createddate</small>
+                        </div>
+                        <p class="mb-0 text-secondary small ms-4">@note.Message</p>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

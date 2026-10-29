@@ -1,0 +1,47 @@
+@model StudentFoodParcelApp.Models.Person
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>Person</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Firstname)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Firstname)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Lastname)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Lastname)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Emailaddress)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Emailaddress)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Phonenumber)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Phonenumber)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Gender)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Gender)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Dateofbirth)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Dateofbirth)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Accountstatus)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Accountstatus)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Createddate)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Createddate)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Lastlogin)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Lastlogin)</dd>
+
+        <dt class="col-sm-2">@Html.DisplayNameFor(model => model.Username)</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Username)</dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model?.Personid">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>

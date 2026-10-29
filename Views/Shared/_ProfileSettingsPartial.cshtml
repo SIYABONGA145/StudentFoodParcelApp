@@ -1,0 +1,99 @@
+﻿@* Security & Password Update Section *@
+<div class="card border-0 shadow-sm rounded-3 bg-white mt-4">
+    <div class="card-body p-4">
+        <h5 class="fw-bold text-dark mb-3">
+            <i class="bi bi-shield-lock me-2 text-primary"></i>Security & Password
+        </h5>
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <form asp-controller="Account" asp-action="ChangePassword" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="currPass" class="form-label fw-semibold">Current Password</label>
+                    <div class="input-group">
+                        <input type="password" id="currPass" name="currentPassword" class="form-control" placeholder="Enter current password" required />
+                        <button class="btn btn-outline-secondary" type="button" aria-label="Toggle Current Password Visibility" onclick="togglePasswordVisibility('currPass', 'eyeCurr')">
+                            <i class="bi bi-eye-slash" id="eyeCurr"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="newPass" class="form-label fw-semibold">New Password</label>
+                    <div class="input-group">
+                        <input type="password" id="newPass" name="newPassword" class="form-control" placeholder="Enter new password" required />
+                        <button class="btn btn-outline-secondary" type="button" aria-label="Toggle New Password Visibility" onclick="togglePasswordVisibility('newPass', 'eyeNew')">
+                            <i class="bi bi-eye-slash" id="eyeNew"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="confirmPass" class="form-label fw-semibold">Confirm New Password</label>
+                    <div class="input-group">
+                        <input type="password" id="confirmPass" name="confirmPassword" class="form-control" placeholder="Confirm new password" required />
+                        <button class="btn btn-outline-secondary" type="button" aria-label="Toggle Confirm Password Visibility" onclick="togglePasswordVisibility('confirmPass', 'eyeConfirm')">
+                            <i class="bi bi-eye-slash" id="eyeConfirm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="col-12 text-end mt-3">
+                    <button type="submit" class="btn btn-primary px-4 fw-semibold">Update Password</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* Delete Account Confirmation Modal *@
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3 bg-danger text-white">
+                <h5 class="modal-title fw-bold" id="deleteAccountModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Account
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <p class="fw-bold mb-1 text-dark">Are you sure you want to permanently delete your account?</p>
+                <p class="text-muted small mb-0">This action cannot be undone. All your personal profile records and application history will be removed from the system.</p>
+            </div>
+            <div class="modal-footer border-top bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form asp-controller="Account" asp-action="DeleteAccount" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger fw-semibold px-4">Yes, Delete My Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePasswordVisibility(inputId, iconId) {
+        const inputElem = document.getElementById(inputId);
+        const iconElem = document.getElementById(iconId);
+        if (inputElem && iconElem) {
+            if (inputElem.type === "password") {
+                inputElem.type = "text";
+                iconElem.classList.remove("bi-eye-slash");
+                iconElem.classList.add("bi-eye");
+            } else {
+                inputElem.type = "password";
+                iconElem.classList.remove("bi-eye");
+                iconElem.classList.add("bi-eye-slash");
+            }
+        }
+    }
+</script>

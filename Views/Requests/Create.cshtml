@@ -1,0 +1,62 @@
+﻿@model StudentFoodParcelApp.Models.Request
+
+@{
+    ViewData["Title"] = "Submit New Application";
+    var availableCycles = ViewBag.AvailableCycles as List<StudentFoodParcelApp.Models.Foodparcelcycle>;
+}
+
+<div class="container-fluid px-4 py-3">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0 font-weight-bold">Apply for Food Parcel Cycle</h5>
+                </div>
+                <div class="card-body p-4">
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger mb-4" role="alert">
+                            <div asp-validation-summary="All" class="text-danger small mb-0"></div>
+                        </div>
+                    }
+
+                    @if (availableCycles == null || !availableCycles.Any())
+                    {
+                        <div class="alert alert-info text-center my-3" role="alert">
+                            <i class="bi bi-info-circle me-2"></i>
+                            There are currently no active distribution cycles open for application or you have already applied to all available cycles.
+                        </div>
+                        <div class="d-grid mt-4">
+                            <a asp-action="Index" class="btn btn-outline-secondary">Return to My Applications</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <form asp-action="Create" method="post">
+                            @Html.AntiForgeryToken()
+
+                            <div class="mb-3">
+                                <label for="cycleId" class="form-label font-weight-bold">Select Distribution Cycle</label>
+                                <select name="cycleId" id="cycleId" class="form-select form-select-lg" required>
+                                    <option value="" disabled selected>-- Choose an open cycle --</option>
+                                    @foreach (var cycle in availableCycles)
+                                    {
+                                        <option value="@cycle.Cycleid">
+                                            @cycle.Cyclename (Ends: @cycle.Enddate)
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-4">
+                                <a asp-action="Index" class="btn btn-light border">Cancel</a>
+                                <button type="submit" class="btn btn-primary px-4">Submit Application</button>
+                            </div>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

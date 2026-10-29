@@ -1,0 +1,312 @@
+﻿@model IEnumerable<StudentFoodParcelApp.Models.StudentApplicationViewModel>
+
+@{
+    ViewData["Title"] = "My Applications";
+    var activeCycles = ViewBag.ActiveCycles as List<StudentFoodParcelApp.Models.Foodparcelcycle> ?? new List<StudentFoodParcelApp.Models.Foodparcelcycle>();
+    var existingCycleIds = ViewBag.ExistingCycleIds as List<int> ?? new List<int>();
+}
+
+<form id="afForm" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">My Applications</h3>
+        <p class="text-muted small mb-0">Apply for ongoing food parcel distribution cycles, monitor your approval status, or withdraw requests.</p>
+    </div>
+    <button class="btn btn-primary px-4 fw-semibold shadow-sm" onclick="openWizardModal()">
+        <i class="bi bi-plus-lg me-2"></i>New Application
+    </button>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card border-0 shadow-sm rounded-3 bg-white">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-3">Reference</th>
+                        <th>Parcel Cycle</th>
+                        <th>Date Requested</th>
+                        <th>Application Status</th>
+                        <th>Parcel Contents</th>
+                        <th class="text-center pe-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model == null || !Model.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                You have not submitted any food parcel applications yet.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var app in Model)
+                        {
+                            <tr>
+                                <td class="ps-3 fw-bold">FPS-@app.RequestId.ToString("D4")</td>
+                                <td class="fw-semibold">@app.CycleName</td>
+                                <td>@app.RequestDate</td>
+                                <td>
+                                    <span class="badge bg-@(app.CurrentStatus == "APPROVED" || app.CurrentStatus == "COLLECTED" ? "success" : app.CurrentStatus == "REJECTED" || app.CurrentStatus == "WITHDRAWN" ? "danger" : "warning") text-uppercase">
+                                        @app.CurrentStatus
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (app.CycleItems != null && app.CycleItems.Any())
+                                    {
+                                        <small class="text-muted">
+                                            @string.Join(", ", app.CycleItems.Select(i => $"{i.ItemName} (x{i.Quantity})"))
+                                        </small>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted italic">Standard Pantry Parcel</small>
+                                    }
+                                </td>
+                                <td class="text-center pe-3">
+                                    @if (app.CurrentStatus != "COLLECTED" && app.CurrentStatus != "WITHDRAWN")
+                                    {
+                                        <form asp-action="WithdrawApplication" method="post" onsubmit="return confirm('Are you sure you want to withdraw this application? This action cannot be undone.');" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="requestId" value="@app.RequestId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger fw-semibold">
+                                                <i class="bi bi-x-circle me-1"></i>Withdraw
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">N/A</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Streamlined 3-Step Application Wizard Modal -->
+<div class="modal fade" id="applyWizardModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3 bg-light">
+                <h5 class="modal-title fw-bold text-dark">Food Parcel Application Wizard</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="resetWizard()"></button>
+            </div>
+            <div class="modal-body p-4">
+                
+                <div class="progress-bar-wizard mb-4">
+                    <div class="step-dot active" id="dot1">1</div>
+                    <div class="step-dot" id="dot2">2</div>
+                    <div class="step-dot" id="dot3">3</div>
+                </div>
+
+                <div class="alert alert-danger d-none" id="errorAlert" role="alert"></div>
+
+                <div class="wizard-step active" id="step1">
+                    <h5 class="fw-bold text-dark">Step 1: Select Food Parcel Cycle</h5>
+                    <p class="text-muted small mb-3">Choose an open cycle to receive your food parcel allocation.</p>
+
+                    <div class="mb-3">
+                        <label for="cycleSelect" class="form-label fw-semibold">Available Cycles</label>
+                        <select id="cycleSelect" class="form-select">
+                            <option value="">-- Select an Open Cycle --</option>
+                            @if (activeCycles.Any())
+                            {
+                                @foreach (var cycle in activeCycles)
+                                {
+                                    bool isApplied = existingCycleIds.Contains(cycle.Cycleid);
+                                    <option value="@cycle.Cycleid" data-applied="@isApplied.ToString().ToLower()">
+                                        @cycle.Cyclename (@cycle.Startdate to @cycle.Enddate) @(isApplied ? "[ACTIVE APPLICATION]" : "")
+                                    </option>
+                                }
+                            }
+                            else
+                            {
+                                <option value="" disabled>No active cycles available</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="wizard-step" id="step2">
+                    <h5 class="fw-bold text-dark">Step 2: Review Application</h5>
+                    <p class="text-muted small mb-3">Please confirm all details before submitting your application.</p>
+                    <div class="card border bg-light p-3 rounded-3">
+                        <div class="mb-2"><strong>Student Number:</strong> @ViewBag.StudentNumber</div>
+                        <div class="mb-2"><strong>Applicant Name:</strong> @ViewBag.StudentName</div>
+                        <div class="mb-0"><strong>Selected Cycle:</strong> <span id="reviewCycle" class="fw-semibold text-primary">None</span></div>
+                    </div>
+                </div>
+
+                <div class="wizard-step" id="step3">
+                    <div class="text-center py-4">
+                        <div class="text-success display-3 mb-3"><i class="bi bi-check-circle-fill"></i></div>
+                        <h4 class="fw-bold text-dark">Application Submitted Successfully!</h4>
+                        <p class="text-muted small mb-0">Your request has been securely processed and saved.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer border-top bg-light d-flex justify-content-between" id="navButtons">
+                <button type="button" class="btn btn-secondary d-none" id="prevBtn" onclick="moveStep(-1)">Previous</button>
+                <button type="button" class="btn btn-primary px-4 ms-auto" id="nextBtn" onclick="moveStep(1)">Next &rarr;</button>
+                <button type="button" class="btn btn-success px-4 ms-auto d-none" id="submitBtn" onclick="handleSubmit(this)">Submit Application</button>
+                <button type="button" class="btn btn-outline-secondary d-none" id="closeBtn" data-bs-dismiss="modal" onclick="window.location.reload()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .progress-bar-wizard { display: flex; justify-content: space-between; position: relative; max-width: 400px; margin: 0 auto; }
+    .progress-bar-wizard::before { content: ''; position: absolute; top: 15px; left: 0; right: 0; height: 2px; background-color: #e5e7eb; z-index: 1; }
+    .step-dot { width: 32px; height: 32px; border-radius: 50%; background-color: #e5e7eb; color: #4b5563; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 2; transition: all 0.3s ease; }
+    .step-dot.active { background-color: #2563eb; color: white; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2); }
+    .step-dot.completed { background-color: #10b981; color: white; }
+    .wizard-step { display: none; }
+    .wizard-step.active { display: block; }
+</style>
+
+@section Scripts {
+<script>
+    let currentStep = 1;
+    let wizardModalInstance = null;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const cycleId = urlParams.get('cycleId');
+        const openModal = urlParams.get('openModal');
+
+        if (cycleId || openModal === 'true') {
+            openWizardModal();
+            if (cycleId) {
+                const select = document.getElementById('cycleSelect');
+                if (select) select.value = cycleId;
+            }
+        }
+    });
+
+    function getCsrfToken() {
+        const tokenElem = document.querySelector('#afForm input[name="__RequestVerificationToken"]');
+        return tokenElem ? tokenElem.value : '';
+    }
+
+    function openWizardModal() {
+        resetWizard();
+        wizardModalInstance = new bootstrap.Modal(document.getElementById('applyWizardModal'));
+        wizardModalInstance.show();
+    }
+
+    function moveStep(direction) {
+        const errorAlert = document.getElementById('errorAlert');
+        errorAlert.classList.add('d-none');
+
+        if (currentStep === 1 && direction === 1) {
+            const selectElement = document.getElementById('cycleSelect');
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const selectedValue = selectElement.value;
+
+            if (!selectedValue) { showError("Please select an available food parcel cycle to proceed."); return; }
+            const isAlreadyApplied = selectedOption.getAttribute('data-applied') === 'true';
+            if (isAlreadyApplied) { showError("You currently have an active application for this cycle."); return; }
+            document.getElementById('reviewCycle').innerText = selectedOption.text;
+        }
+
+        document.getElementById(`step${currentStep}`).classList.remove('active');
+        document.getElementById(`dot${currentStep}`).classList.remove('active');
+        if (direction === 1) document.getElementById(`dot${currentStep}`).classList.add('completed');
+
+        currentStep += direction;
+
+        document.getElementById(`step${currentStep}`).classList.add('active');
+        document.getElementById(`dot${currentStep}`).classList.add('active');
+        if (direction === -1) document.getElementById(`dot${currentStep}`).classList.remove('completed');
+
+        updateButtons();
+    }
+
+    function updateButtons() {
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const closeBtn = document.getElementById('closeBtn');
+
+        if (currentStep === 1 || currentStep === 3) prevBtn.classList.add('d-none');
+        else prevBtn.classList.remove('d-none');
+
+        if (currentStep === 2) { nextBtn.classList.add('d-none'); submitBtn.classList.remove('d-none'); closeBtn.classList.add('d-none'); }
+        else if (currentStep === 3) { nextBtn.classList.add('d-none'); submitBtn.classList.add('d-none'); prevBtn.classList.add('d-none'); closeBtn.classList.remove('d-none'); }
+        else { nextBtn.classList.remove('d-none'); submitBtn.classList.add('d-none'); closeBtn.classList.add('d-none'); }
+    }
+
+    function handleSubmit(btn) {
+        const cycleId = document.getElementById('cycleSelect').value;
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
+
+        fetch('/Student/SubmitApplication', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': getCsrfToken() },
+            body: `cycleId=${cycleId}`
+        })
+        .then(res => { if (!res.ok) throw new Error(`HTTP Error ${res.status}`); return res.json(); })
+        .then(data => {
+            if (data.success) moveStep(1);
+            else { showError(data.message); btn.disabled = false; btn.innerHTML = originalText; }
+        })
+        .catch(err => { showError("Failed to submit application: " + err.message); btn.disabled = false; btn.innerHTML = originalText; });
+    }
+
+    function showError(message) {
+        const errorAlert = document.getElementById('errorAlert');
+        errorAlert.innerText = message;
+        errorAlert.classList.remove('d-none');
+    }
+
+    function resetWizard() {
+        currentStep = 1;
+        document.getElementById('errorAlert').classList.add('d-none');
+        document.getElementById('cycleSelect').value = '';
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Submit Application';
+
+        for (let i = 1; i <= 3; i++) {
+            const step = document.getElementById(`step${i}`);
+            const dot = document.getElementById(`dot${i}`);
+            if (step) step.classList.remove('active');
+            if (dot) dot.classList.remove('active', 'completed');
+        }
+        document.getElementById('step1').classList.add('active');
+        document.getElementById('dot1').classList.add('active');
+        updateButtons();
+    }
+</script>
+}

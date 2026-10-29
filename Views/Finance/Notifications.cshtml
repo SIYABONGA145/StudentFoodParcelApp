@@ -1,0 +1,48 @@
+﻿@model IEnumerable<StudentFoodParcelApp.Models.Notification>
+
+@{
+    ViewData["Title"] = "Finance Notifications";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Notifications</h3>
+        <p class="text-muted small mb-0">Stay informed about new student applications that require funding verification.</p>
+    </div>
+    <a asp-action="Students" class="btn btn-primary fw-semibold shadow-sm">
+        <i class="bi bi-person-check me-1"></i> Go to Verification
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3 bg-white">
+    <div class="card-body p-0">
+        @if (Model == null || !Model.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-bell-slash fs-1 d-block mb-2 text-secondary"></i>
+                <p class="mb-0 fw-semibold">No new notifications.</p>
+                <small class="text-muted">You are up to date with all student verifications.</small>
+            </div>
+        }
+        else
+        {
+            <div class="list-group list-group-flush">
+                @foreach (var note in Model)
+                {
+                    <div class="list-group-item p-3 border-bottom d-flex align-items-start gap-3">
+                        <div class="bg-warning bg-opacity-10 text-warning rounded-circle p-2 mt-1">
+                            <i class="bi bi-person-exclamation fs-5"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                                <h6 class="fw-bold mb-0 text-dark">@note.Title</h6>
+                                <small class="text-muted">@note.Createddate</small>
+                            </div>
+                            <p class="mb-0 text-secondary small">@note.Message</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

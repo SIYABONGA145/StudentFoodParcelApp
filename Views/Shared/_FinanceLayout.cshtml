@@ -1,0 +1,107 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Finance Portal</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        html, body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #wrapper {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #sidebar-wrapper {
+            width: 260px;
+            min-width: 260px;
+            max-width: 260px;
+            height: 100vh;
+            overflow-y: auto;
+            background-color: #0f172a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+        .sidebar-header {
+            padding: 1.25rem 1rem;
+            background-color: #020617;
+            border-bottom: 1px solid #1e293b;
+            display: flex;
+            align-items: center;
+        }
+        .sidebar-brand-text h4 { font-size: 1.25rem; font-weight: 700; margin: 0; color: #fff; }
+        .sidebar-brand-text p { font-size: 0.75rem; color: #94a3b8; margin: 0; }
+        .sidebar-menu-container { padding: 0.75rem 0.5rem; }
+        #sidebar-wrapper .list-group-item { display: flex; align-items: center; width: 100%; padding: 0.75rem 1rem; color: #cbd5e1; background-color: transparent; border: none; font-size: 0.95rem; border-radius: 6px; margin-bottom: 0.25rem; text-decoration: none; }
+        #sidebar-wrapper .list-group-item:hover { background-color: #1e293b; color: #ffffff; }
+        #sidebar-wrapper .list-group-item i { font-size: 1.1rem; min-width: 24px; }
+        #sidebar-wrapper .list-group-item .menu-text { margin-left: 0.75rem; }
+        .logout-container { border-top: 1px solid #1e293b; padding: 0.5rem; background-color: #020617; }
+        #page-content-wrapper {
+            flex-grow: 1;
+            height: 100vh;
+            overflow-y: auto;
+            min-width: 0;
+        }
+    </style>
+</head>
+<body>
+<div id="wrapper">
+    <div id="sidebar-wrapper">
+        <div>
+            <div class="sidebar-header">
+                <i class="bi bi-cash-coin text-success fs-3 me-2"></i>
+                <div class="sidebar-brand-text">
+                    <h4>Finance</h4>
+                </div>
+            </div>
+
+            <div class="sidebar-menu-container">
+                <a asp-controller="Finance" asp-action="Index" class="list-group-item list-group-item-action">
+                    <i class="bi bi-speedometer2"></i><span class="menu-text">Dashboard</span>
+                </a>
+                <a asp-controller="Finance" asp-action="Profile" class="list-group-item list-group-item-action">
+                    <i class="bi bi-person-badge"></i><span class="menu-text">My Profile</span>
+                </a>
+                <a asp-controller="Finance" asp-action="Students" class="list-group-item list-group-item-action">
+                    <i class="bi bi-people-fill"></i><span class="menu-text">Student Verification</span>
+                </a>
+                <a asp-controller="Finance" asp-action="Notifications" class="list-group-item list-group-item-action">
+                    <i class="bi bi-bell"></i><span class="menu-text">Notifications</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="logout-container">
+            <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
+                <button type="submit" class="list-group-item list-group-item-action text-danger m-0 w-100 text-start" style="border: none; background: transparent;">
+                    <i class="bi bi-box-arrow-right"></i><span class="menu-text">Logout</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="page-content-wrapper">
+        <div class="container-fluid p-4">
+            @RenderBody()
+        </div>
+    </div>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,359 @@
+﻿@model IEnumerable<StudentFoodParcelApp.Models.ParcelCycleViewModel>
+@{
+    ViewData["Title"] = "Parcel Cycles & Items";
+}
+
+<!-- Anti-Forgery Token Form for Global JS Headers -->
+<form id="afForm" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Parcel Cycles & Contents</h3>
+        <p class="text-muted small mb-0">Manage distribution schedules and define specific food items contained in each cycle.</p>
+    </div>
+    <button class="btn btn-primary px-4 fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#createCycleModal">
+        <i class="bi bi-plus-lg me-2"></i>Create New Cycle
+    </button>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row g-4">
+    @if (Model == null || !Model.Any())
+    {
+        <div class="col-12">
+            <div class="card border-0 shadow-sm p-5 text-center text-muted rounded-3 bg-white">
+                <i class="bi bi-box-seam fs-1 text-secondary mb-3"></i>
+                <h5>No Parcel Cycles Created Yet</h5>
+                <p class="small mb-0">Click the button above to set up your first food parcel distribution cycle.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        @foreach (var cycle in Model)
+        {
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                    <!-- Cycle Header Form -->
+                    <form asp-action="UpdateCycle" method="post" id="cycle-form-@cycle.CycleId">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="CycleId" value="@cycle.CycleId" />
+
+                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <div class="flex-grow-1 me-3">
+                                <input type="text" name="CycleName" id="name-@cycle.CycleId" value="@cycle.CycleName" class="form-control form-control-sm fw-bold border-0 bg-transparent" readonly required />
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-edit-@cycle.CycleId" onclick="enableCycleEdit(@cycle.CycleId)">
+                                    <i class="bi bi-pencil-square"></i> Edit Cycle
+                                </button>
+                                <button type="submit" class="btn btn-sm btn-success d-none" id="btn-save-@cycle.CycleId">
+                                    <i class="bi bi-check-lg"></i> Save
+                                </button>
+                                <button type="button" class="btn btn-sm btn-secondary d-none" id="btn-cancel-@cycle.CycleId" onclick="window.location.reload();">
+                                    <i class="bi bi-x-lg"></i> Cancel
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="if(confirm('Are you sure you want to delete cycle @cycle.CycleId? All related student applications will be removed.')) { document.getElementById('delete-form-@cycle.CycleId').submit(); }">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="card-body p-4">
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label small text-muted mb-1">Start Date</label>
+                                    <input type="date" name="StartDate" id="start-@cycle.CycleId" value="@cycle.StartDate" class="form-control form-control-sm border-0 bg-transparent" readonly required />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small text-muted mb-1">End Date</label>
+                                    <input type="date" name="EndDate" id="end-@cycle.CycleId" value="@cycle.EndDate" class="form-control form-control-sm border-0 bg-transparent" readonly required />
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Hidden Delete Cycle Form -->
+                    <form asp-action="CancelCycle" method="post" id="delete-form-@cycle.CycleId" class="d-none">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="cycleId" value="@cycle.CycleId" />
+                    </form>
+
+                    <!-- Parcel Items Section -->
+                    <div class="card-footer bg-light p-4 border-top">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold text-secondary mb-0"><i class="bi bi-list-check me-2"></i>Parcel Contents</h6>
+                            <button class="btn btn-sm btn-outline-primary fw-semibold" onclick="openAddItemModal(@cycle.CycleId, '@cycle.CycleName')">
+                                <i class="bi bi-plus-circle me-1"></i>Add Item
+                            </button>
+                        </div>
+
+                        <div class="table-responsive border rounded-3 bg-white">
+                            <table class="table table-sm table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3" style="width: 60%;">Item Name</th>
+                                        <th style="width: 20%;">Qty</th>
+                                        <th class="text-end pe-3" style="width: 20%;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="items-list-@cycle.CycleId">
+                                    @if (cycle.Items == null || !cycle.Items.Any())
+                                    {
+                                        <tr class="no-items-row">
+                                            <td colspan="3" class="text-center text-muted py-3 small">
+                                                No items added to this parcel yet.
+                                            </td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var item in cycle.Items)
+                                        {
+                                            <tr id="item-row-@item.ItemId">
+                                                <td class="ps-3 fw-semibold">
+                                                    <input type="text" id="item-name-@item.ItemId" value="@item.ItemName" class="form-control form-control-sm border-0 bg-transparent" readonly />
+                                                </td>
+                                                <td>
+                                                    <input type="number" id="item-qty-@item.ItemId" value="@item.Quantity" class="form-control form-control-sm border-0 bg-transparent fw-bold text-primary" style="max-width: 70px;" readonly />
+                                                </td>
+                                                <td class="text-end pe-3">
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button type="button" class="btn btn-link text-primary p-0 me-2" id="btn-edit-item-@item.ItemId" onclick="enableItemEdit(@item.ItemId)">
+                                                            <i class="bi bi-pencil-square"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-link text-success p-0 me-2 d-none" id="btn-save-item-@item.ItemId" onclick="saveItemEdit(@item.ItemId)">
+                                                            <i class="bi bi-check-lg fw-bold"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-link text-secondary p-0 me-2 d-none" id="btn-cancel-item-@item.ItemId" onclick="window.location.reload();">
+                                                            <i class="bi bi-x-lg"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-link text-danger p-0" onclick="removeItem(@item.ItemId)">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!-- Modal 1: Create Cycle -->
+<div class="modal fade" id="createCycleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3">
+                <h5 class="modal-title fw-bold text-dark">Create Parcel Cycle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="CreateCycle" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Cycle Name</label>
+                        <input name="cycleName" class="form-control" placeholder="e.g. October 2026 Distribution" required />
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Start Date</label>
+                            <input type="date" name="startDate" class="form-control" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">End Date</label>
+                            <input type="date" name="endDate" class="form-control" required />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4 fw-semibold">Create Cycle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Add Item -->
+<div class="modal fade" id="addItemModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3">
+                <h5 class="modal-title fw-bold text-dark" id="addItemModalTitle">Add Food Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="modalCycleId" />
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Item Name</label>
+                    <input type="text" id="modalItemName" class="form-control" placeholder="e.g. Maize Meal 5kg, Rice 2kg..." />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Quantity Per Parcel</label>
+                    <input type="number" id="modalQuantity" class="form-control" value="1" min="1" max="100" required />
+                </div>
+            </div>
+            <div class="modal-footer border-top bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary px-4 fw-semibold" onclick="submitAddItem()">Add Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let activeModalInstance = null;
+
+        function getCsrfToken() {
+            const tokenElem = document.querySelector('#afForm input[name="__RequestVerificationToken"]');
+            return tokenElem ? tokenElem.value : '';
+        }
+
+        function enableCycleEdit(cycleId) {
+            const nameInput = document.getElementById(`name-${cycleId}`);
+            const startInput = document.getElementById(`start-${cycleId}`);
+            const endInput = document.getElementById(`end-${cycleId}`);
+
+            if (nameInput) { nameInput.removeAttribute('readonly'); nameInput.classList.remove('border-0', 'bg-transparent'); }
+            if (startInput) { startInput.removeAttribute('readonly'); startInput.classList.remove('border-0', 'bg-transparent'); }
+            if (endInput) { endInput.removeAttribute('readonly'); endInput.classList.remove('border-0', 'bg-transparent'); }
+
+            document.getElementById(`btn-edit-${cycleId}`).classList.add('d-none');
+            document.getElementById(`btn-save-${cycleId}`).classList.remove('d-none');
+            document.getElementById(`btn-cancel-${cycleId}`).classList.remove('d-none');
+        }
+
+        function enableItemEdit(itemId) {
+            const nameInput = document.getElementById(`item-name-${itemId}`);
+            const qtyInput = document.getElementById(`item-qty-${itemId}`);
+
+            if (nameInput) { nameInput.removeAttribute('readonly'); nameInput.classList.remove('border-0', 'bg-transparent'); }
+            if (qtyInput) { qtyInput.removeAttribute('readonly'); qtyInput.classList.remove('border-0', 'bg-transparent'); }
+
+            document.getElementById(`btn-edit-item-${itemId}`).classList.add('d-none');
+            document.getElementById(`btn-save-item-${itemId}`).classList.remove('d-none');
+            document.getElementById(`btn-cancel-item-${itemId}`).classList.remove('d-none');
+        }
+
+        function saveItemEdit(itemId) {
+            const nameInput = document.getElementById(`item-name-${itemId}`);
+            const qtyInput = document.getElementById(`item-qty-${itemId}`);
+
+            const itemName = nameInput.value;
+            const quantity = parseInt(qtyInput.value);
+
+            if (!itemName.trim() || isNaN(quantity) || quantity <= 0) {
+                alert('Please enter a valid item name and positive quantity.');
+                return;
+            }
+
+            fetch('/SrcAdmin/UpdateCycleItem', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getCsrfToken()
+                },
+                body: JSON.stringify({ itemId: itemId, itemName: itemName, quantity: quantity })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    nameInput.setAttribute('readonly', 'readonly');
+                    nameInput.classList.add('border-0', 'bg-transparent');
+                    qtyInput.setAttribute('readonly', 'readonly');
+                    qtyInput.classList.add('border-0', 'bg-transparent');
+
+                    document.getElementById(`btn-edit-item-${itemId}`).classList.remove('d-none');
+                    document.getElementById(`btn-save-item-${itemId}`).classList.add('d-none');
+                    document.getElementById(`btn-cancel-item-${itemId}`).classList.add('d-none');
+                    alert(data.message);
+                } else {
+                    alert(`Save Failed: ${data.message}`);
+                }
+            })
+            .catch(err => alert('Failed to save item changes: ' + err.message));
+        }
+
+        function openAddItemModal(cycleId, cycleName) {
+            document.getElementById('modalCycleId').value = cycleId;
+            document.getElementById('addItemModalTitle').innerText = `Add Item (${cycleName})`;
+            document.getElementById('modalItemName').value = '';
+            document.getElementById('modalQuantity').value = 1;
+            activeModalInstance = new bootstrap.Modal(document.getElementById('addItemModal'));
+            activeModalInstance.show();
+        }
+
+        function submitAddItem() {
+            const cycleId = document.getElementById('modalCycleId').value;
+            const itemName = document.getElementById('modalItemName').value;
+            const quantity = document.getElementById('modalQuantity').value;
+
+            if (!itemName.trim()) {
+                alert('Please enter an item name.');
+                return;
+            }
+
+            fetch('/SrcAdmin/AddItemToCycle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getCsrfToken()
+                },
+                body: JSON.stringify({ cycleId: parseInt(cycleId), itemName: itemName, quantity: parseInt(quantity) })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert(`Failed to add item: ${data.message}`);
+                }
+            })
+            .catch(err => alert('Failed to add item: ' + err.message));
+        }
+
+        function removeItem(itemId) {
+            if (!confirm('Are you sure you want to remove this item from the parcel?')) return;
+
+            fetch(`/SrcAdmin/RemoveItem?itemId=${itemId}`, {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': getCsrfToken() }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const row = document.getElementById(`item-row-${itemId}`);
+                    if (row) row.remove();
+                } else {
+                    alert(`Error: ${data.message}`);
+                }
+            })
+            .catch(err => alert('Failed to remove item: ' + err.message));
+        }
+    </script>
+}

@@ -1,0 +1,121 @@
+﻿@model StudentFoodParcelApp.Models.StudentProfileViewModel
+
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="container-fluid max-width-900 px-0">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">My Profile</h3>
+            <p class="text-muted small mb-0">Manage your personal account details and personal information.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button id="btnEdit" type="button" class="btn btn-outline-primary px-3 fw-semibold">
+                <i class="bi bi-pencil-square me-1"></i> Edit Details
+            </button>
+            <button id="btnSave" type="button" class="btn btn-success px-3 fw-semibold d-none" onclick="document.getElementById('profileForm').submit();">
+                <i class="bi bi-check-lg me-1"></i> Save Changes
+            </button>
+            <button id="btnCancel" type="button" class="btn btn-secondary px-3 fw-semibold d-none" onclick="window.location.reload();">
+                <i class="bi bi-x-lg me-1"></i> Cancel Changes
+            </button>
+
+            <div class="dropdown">
+                <button class="btn btn-light border-0 rounded-circle p-2 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Account Actions">
+                    <i class="bi bi-three-dots-vertical fs-5 text-secondary"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end border-0 shadow rounded-3">
+                    <li>
+                        <button class="dropdown-item text-danger fw-semibold py-2" type="button" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                            <i class="bi bi-trash3 me-2"></i>Delete Account
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm rounded-3 bg-white">
+        <div class="card-body p-4">
+            <form id="profileForm" asp-action="Profile" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="PersonId" />
+                <input type="hidden" asp-for="StudentId" />
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3 small"></div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="StudentNumber" class="form-label fw-semibold">Student Number</label>
+                        <input asp-for="StudentNumber" class="form-control editable-field" readonly required 
+                               maxlength="9" pattern="\d{9}" title="Student number must be exactly 9 digits." />
+                        <span asp-validation-for="StudentNumber" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Campus Allocation</label>
+                        <input asp-for="CampusName" class="form-control bg-light" readonly />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Firstname" class="form-label fw-semibold">First Name</label>
+                        <input asp-for="Firstname" class="form-control editable-field" readonly required />
+                        <span asp-validation-for="Firstname" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Lastname" class="form-label fw-semibold">Last Name</label>
+                        <input asp-for="Lastname" class="form-control editable-field" readonly required />
+                        <span asp-validation-for="Lastname" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Emailaddress" class="form-label fw-semibold">Email Address</label>
+                        <input asp-for="Emailaddress" type="email" class="form-control editable-field" readonly required />
+                        <span asp-validation-for="Emailaddress" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Phonenumber" class="form-label fw-semibold">Phone Number</label>
+                        <input asp-for="Phonenumber" class="form-control editable-field" readonly />
+                        <span asp-validation-for="Phonenumber" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Gender" class="form-label fw-semibold">Gender</label>
+                        <select asp-for="Gender" class="form-select editable-field" disabled>
+                            <option value="">-- Select Gender --</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Dateofbirth" class="form-label fw-semibold">Date of Birth</label>
+                        <input asp-for="Dateofbirth" type="date" class="form-control editable-field" readonly />
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <partial name="_ProfileSettingsPartial" />
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('btnEdit').addEventListener('click', function () {
+            document.querySelectorAll('.editable-field').forEach(field => {
+                field.removeAttribute('readonly');
+                field.removeAttribute('disabled');
+                field.classList.remove('bg-light');
+            });
+            document.getElementById('btnEdit').classList.add('d-none');
+            document.getElementById('btnSave').classList.remove('d-none');
+            document.getElementById('btnCancel').classList.remove('d-none');
+        });
+    </script>
+}

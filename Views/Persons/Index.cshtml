@@ -1,0 +1,54 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2 class="fw-bold">Welcome to Student Food Parcel Portal</h2>
+        <p class="text-muted">Manage food parcel applications, distributions, and student registrations.</p>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 bg-white rounded">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary text-white p-3 rounded me-3">
+                    <i class="bi bi-people fs-3"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1">User Management</h6>
+                    <a asp-controller="Persons" asp-action="Index" class="fw-bold text-decoration-none">Manage Persons &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 bg-white rounded">
+            <div class="d-flex align-items-center">
+                <div class="bg-success text-white p-3 rounded me-3">
+                    <i class="bi bi-mortarboard fs-3"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1">Students Directory</h6>
+                    <a asp-controller="Students" asp-action="Index" class="fw-bold text-decoration-none">View Students &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 bg-white rounded">
+            <div class="d-flex align-items-center">
+                <div class="bg-warning text-dark p-3 rounded me-3">
+                    <i class="bi bi-box-seam fs-3"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1">Parcel Cycles</h6>
+                    <span class="text-muted small">System Active</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,253 @@
+﻿@model IEnumerable<StudentFoodParcelApp.Models.ApplicationItemViewModel>
+@{
+    ViewData["Title"] = "Student Applications";
+}
+
+<form id="afForm" class="d-none">@Html.AntiForgeryToken()</form>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-dark mb-1">Student Applications</h3>
+        <p class="text-muted small mb-0">Review submitted student parcel requests, verify funding status, and approve or reject applications.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button id="btnEditPage" class="btn btn-outline-primary px-3 fw-semibold shadow-sm" onclick="enableEditMode()">
+            <i class="bi bi-pencil-square me-1"></i> Edit
+        </button>
+        <button id="btnSavePage" class="btn btn-success px-4 fw-semibold shadow-sm d-none" onclick="saveStudentProfileChanges()">
+            <i class="bi bi-check-lg me-1"></i> Save Changes
+        </button>
+        <button id="btnCancelPage" class="btn btn-secondary px-3 fw-semibold shadow-sm d-none" onclick="window.location.reload();">
+            <i class="bi bi-x-lg me-1"></i> Cancel
+        </button>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-3">
+        <div class="input-group">
+            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="appSearchInput" class="form-control border-start-0 bg-light" placeholder="Search by student number, name, or Reference..." onkeyup="filterApplications()" />
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3 bg-white">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="applicationsTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-3">Reference</th>
+                        <th>Student No.</th>
+                        <th>Student Name & Contact</th>
+                        <th>Campus</th>
+                        <th>Cycle</th>
+                        <th>Funding Status</th>
+                        <th>Current Status</th>
+                        <th>Decision & Remarks</th>
+                        <th class="text-center pe-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model == null || !Model.Any())
+                    {
+                        <tr><td colspan="9" class="text-center py-4 text-muted">No student applications found for your campus.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var app in Model)
+                        {
+                            <tr class="app-row" data-request-id="@app.RequestId" data-person-id="@app.PersonId">
+                                <td class="ps-3 fw-bold">FPS-@app.RequestId.ToString("D4")</td>
+                                <td class="fw-semibold student-no">@app.StudentNumber</td>
+                                <td>
+                                    <div class="fw-bold text-dark student-name-display">@app.StudentName</div>
+                                    <div class="d-flex gap-2 d-none edit-field">
+                                        <input type="text" class="form-control form-control-sm fname-input" value="@app.StudentName" placeholder="Name" />
+                                    </div>
+                                    
+                                    <small class="text-muted student-email-display d-block">@app.Email</small>
+                                    <input type="text" class="form-control form-control-sm edit-field email-input d-none mt-1" value="@app.Email" placeholder="Email" />
+                                </td>
+                                <td>@app.CampusName</td>
+                                <td><span class="badge bg-light text-dark border">@app.CycleName</span></td>
+                                <td>
+                                    @if(app.FundingStatus == "FUNDED") {
+                                        <span class="badge bg-success px-3 py-2 text-uppercase text-white">@app.FundingStatus</span>
+                                    } else {
+                                        <span class="badge bg-danger px-3 py-2 text-uppercase text-white">@app.FundingStatus</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (app.CurrentStatus == "APPROVED" || app.CurrentStatus == "READY_FOR_COLLECTION" || app.CurrentStatus == "COLLECTED") {
+                                        <span class="badge bg-primary px-3 py-2 text-uppercase text-white status-badge">@app.CurrentStatus</span>
+                                    } else if (app.CurrentStatus == "REJECTED") {
+                                        <span class="badge bg-danger px-3 py-2 text-uppercase text-white status-badge">@app.CurrentStatus</span>
+                                    } else {
+                                        <span class="badge bg-warning text-dark px-3 py-2 text-uppercase status-badge">@app.CurrentStatus</span>
+                                    }
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control form-control-sm remarks-input" value="@app.Remarks" readonly />
+                                </td>
+                                <td class="text-center pe-3">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <!-- Added disabled attribute -->
+                                        <button type="button" class="btn btn-outline-success btn-approve @(app.CurrentStatus == "APPROVED" ? "active" : "")" 
+                                                title="Approve" disabled onclick="setAppStatus(@app.RequestId, 'APPROVED', this)">
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger btn-reject @(app.CurrentStatus == "REJECTED" ? "active" : "")" 
+                                                title="Reject" disabled onclick="setAppStatus(@app.RequestId, 'REJECTED', this)">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function getCsrfToken() {
+        return document.querySelector('#afForm input[name="__RequestVerificationToken"]')?.value || '';
+    }
+
+    // 1. Enable Edit Mode
+    function enableEditMode() {
+        // Show editable fields
+        document.querySelectorAll('.student-name-display, .student-email-display').forEach(el => el.classList.add('d-none'));
+        document.querySelectorAll('.edit-field').forEach(el => el.classList.remove('d-none'));
+        
+        // Enable status buttons
+        document.querySelectorAll('.btn-approve, .btn-reject').forEach(btn => btn.removeAttribute('disabled'));
+        
+        // Enable remarks
+        document.querySelectorAll('.remarks-input').forEach(inp => inp.removeAttribute('readonly'));
+
+        // Toggle UI Buttons
+        document.getElementById('btnEditPage').classList.add('d-none');
+        document.getElementById('btnSavePage').classList.remove('d-none');
+        document.getElementById('btnCancelPage').classList.remove('d-none');
+    }
+
+    // 2. Handle clicking Approve/Reject visually
+    function setAppStatus(requestId, newStatus, btnElem) {
+        const row = document.querySelector(`tr.app-row[data-request-id="${requestId}"]`);
+        if (!row) return;
+
+        const approveBtn = row.querySelector('.btn-approve');
+        const rejectBtn = row.querySelector('.btn-reject');
+        const badge = row.querySelector('.status-badge');
+        const remarksInput = row.querySelector('.remarks-input');
+
+        approveBtn.classList.remove('active');
+        rejectBtn.classList.remove('active');
+
+        if (newStatus === 'APPROVED') {
+            approveBtn.classList.add('active');
+            badge.className = 'badge bg-primary px-3 py-2 text-uppercase text-white status-badge';
+            badge.innerText = 'APPROVED';
+            if (!remarksInput.value || remarksInput.value === 'PENDING' || remarksInput.value === 'REJECTED') {
+                remarksInput.value = 'Verified Unfunded Student';
+            }
+        } else if (newStatus === 'REJECTED') {
+            rejectBtn.classList.add('active');
+            badge.className = 'badge bg-danger px-3 py-2 text-uppercase text-white status-badge';
+            badge.innerText = 'REJECTED';
+            if (!remarksInput.value || remarksInput.value === 'PENDING' || remarksInput.value === 'APPROVED') {
+                remarksInput.value = 'Application Rejected by SRC Admin';
+            }
+        }
+
+        row.setAttribute('data-selected-status', newStatus);
+    }
+
+    // 3. Save all changes (Profile updates AND Status updates)
+    function saveStudentProfileChanges() {
+        const rows = document.querySelectorAll('.app-row');
+        let totalTasks = 0;
+        let completedTasks = 0;
+        let errors = [];
+
+        // Count how many tasks we need to perform
+        rows.forEach(row => {
+            if (row.getAttribute('data-selected-status')) totalTasks++; // Status update needed
+            if (row.querySelector('.fname-input')) totalTasks++; // Profile update (always do this if editing)
+        });
+
+        if (totalTasks === 0) {
+            window.location.reload();
+            return;
+        }
+
+        rows.forEach(row => {
+            const requestId = parseInt(row.getAttribute('data-request-id'));
+            const personId = parseInt(row.getAttribute('data-person-id'));
+            const selectedStatus = row.getAttribute('data-selected-status');
+            const remarks = row.querySelector('.remarks-input').value;
+
+            // Task A: Update Status if clicked
+            if (selectedStatus) {
+                fetch('@Url.Action("UpdateStatus", "SrcAdmin")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getCsrfToken() },
+                    body: JSON.stringify({ requestId, newStatus: selectedStatus, remarks: remarks })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    completedTasks++;
+                    if (!data.success) errors.push(data.message);
+                    checkDone();
+                })
+                .catch(() => { completedTasks++; errors.push("Network error on status update."); checkDone(); });
+            }
+
+            // Task B: Update Profile Details (Name/Email)
+            if (row.querySelector('.fname-input')) {
+                const nameParts = row.querySelector('.fname-input').value.trim().split(' ');
+                const firstname = nameParts[0] || '';
+                const lastname = nameParts.slice(1).join(' ') || '';
+                const email = row.querySelector('.email-input').value.trim();
+
+                fetch('@Url.Action("EditStudentProfile", "SrcAdmin")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getCsrfToken() },
+                    body: JSON.stringify({ personId, firstname, lastname, emailaddress: email, phonenumber: '' })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    completedTasks++;
+                    if (!data.success) errors.push(data.message);
+                    checkDone();
+                })
+                .catch(() => { completedTasks++; errors.push("Network error on profile update."); checkDone(); });
+            }
+        });
+
+        function checkDone() {
+            if (completedTasks === totalTasks) {
+                if (errors.length > 0) alert("Errors occurred:\n" + errors.join("\n"));
+                else alert("All changes saved successfully.");
+                window.location.reload();
+            }
+        }
+    }
+
+    // 4. Search Filter
+    function filterApplications() {
+        const query = document.getElementById('appSearchInput').value.toLowerCase();
+        document.querySelectorAll('.app-row').forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    }
+</script>
+}

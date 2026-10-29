@@ -1,0 +1,70 @@
+﻿@model IEnumerable<StudentFoodParcelApp.Models.CollectionViewModel>
+
+@{
+    ViewData["Title"] = "My Collections";
+}
+
+<div class="container-fluid px-4 py-3">
+    <div class="mb-4">
+        <h2 class="fw-bold mb-1">Parcel Collections</h2>
+        <p class="text-muted small mb-0">Present your collection token or QR pass at the designated venue during distribution hours.</p>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row g-4">
+            @foreach (var item in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 rounded-3 text-center">
+                        <div class="card-header bg-success text-white py-3">
+                            <span class="badge bg-light text-success fw-bold me-2">APPROVED</span>
+                            <h6 class="d-inline mb-0 font-weight-bold">#@item.RequestId - @item.CycleName</h6>
+                        </div>
+                        <div class="card-body p-4 d-flex flex-column align-items-center">
+
+                            <div class="my-3 p-2 bg-light rounded border">
+                                <img src="@item.QrCodeBase64" alt="Collection QR Pass" class="img-fluid" style="max-width: 180px;" />
+                            </div>
+
+                            <p class="small text-muted font-monospace mb-3">Token: <strong>@item.VerificationToken</strong></p>
+
+                            <ul class="list-group list-group-flush w-100 text-start small mb-3">
+                                <li class="list-group-item d-flex justify-content-between px-0">
+                                    <span class="text-muted">Campus:</span>
+                                    <span class="fw-semibold">@item.CampusName</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between px-0">
+                                    <span class="text-muted">Venue:</span>
+                                    <span class="fw-semibold">@item.VenueName</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between px-0">
+                                    <span class="text-muted">Date:</span>
+                                    <span class="fw-semibold">@item.DistributionDate</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between px-0">
+                                    <span class="text-muted">Time Window:</span>
+                                    <span class="fw-semibold">@item.DistributionTime</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-footer bg-light text-muted small py-2">
+                            Show this pass on your phone to collect your parcel.
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm rounded-3 p-5 text-center">
+            <i class="bi bi-qr-code-scan display-4 text-muted mb-3"></i>
+            <h5 class="fw-bold">No Active Collection Passes</h5>
+            <p class="text-muted small">You do not have any approved requests pending collection for active cycles.</p>
+            <div class="mt-2">
+                <a asp-action="Index" class="btn btn-outline-primary btn-sm">Check Application Status</a>
+            </div>
+        </div>
+    }
+</div>

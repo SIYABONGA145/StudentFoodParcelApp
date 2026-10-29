@@ -1,0 +1,242 @@
+﻿@model StudentFoodParcelApp.Models.RegisterViewModel
+@{
+    Layout = "_AccountLayout";
+    ViewData["Title"] = "Create Account";
+}
+
+<div class="card shadow-sm col-md-10 col-lg-8 mx-auto">
+    <div class="card-header bg-primary text-white py-3">
+        <h4 class="mb-0 fs-5"><i class="bi bi-person-plus-fill me-2"></i>Create Account</h4>
+    </div>
+    <div class="card-body p-4">
+        <form asp-action="Register" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3 small"></div>
+
+            <!-- ROLE SELECTION -->
+            <div class="mb-4">
+                <label class="form-label fw-bold">Select Account Role</label>
+                <select asp-for="Role" class="form-select" id="roleSelector" onchange="toggleRoleFields()">
+                    <option value="Student">Student</option>
+                    <option value="Finance">Finance Staff</option>
+                    <option value="SRCAdmin">SRC Administrator</option>
+                    <option value="ITAdmin">ICT Administrator</option>
+                </select>
+            </div>
+
+            <hr />
+            <h6 class="text-secondary mb-3 fw-bold">Personal Information</h6>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="FirstName" class="form-label"></label>
+                    <input asp-for="FirstName" class="form-control" />
+                    <span asp-validation-for="FirstName" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="LastName" class="form-label"></label>
+                    <input asp-for="LastName" class="form-control" />
+                    <span asp-validation-for="LastName" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="EmailAddress" class="form-label"></label>
+                    <input asp-for="EmailAddress" type="email" class="form-control" />
+                    <span asp-validation-for="EmailAddress" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="PhoneNumber" class="form-label"></label>
+                    <!-- 10 DIGIT RESTRICTION APPLIED HERE -->
+                    <input asp-for="PhoneNumber" type="text" class="form-control" 
+                           pattern="[0-9]{10}" maxlength="10" title="Please enter exactly 10 digits"
+                           oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" />
+                    <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label asp-for="Gender" class="form-label"></label>
+                    <select asp-for="Gender" class="form-select">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label asp-for="DateOfBirth" class="form-label"></label>
+                    <input asp-for="DateOfBirth" type="date" class="form-control" />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label fw-semibold">University</label>
+                    <!-- THE FIX: Casting ViewBag to IEnumerable<SelectListItem> -->
+                    <select asp-for="UniversityId" class="form-select" id="universitySelector" 
+                            asp-items="@(ViewBag.Universities as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)" 
+                            onchange="loadCampuses()">
+                        <option value="">-- Select University --</option>
+                    </select>
+                    <span asp-validation-for="UniversityId" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label asp-for="CampusId" class="form-label fw-semibold">Campus</label>
+                    <!-- THE FIX: Casting ViewBag to IEnumerable<SelectListItem> -->
+                    <select asp-for="CampusId" class="form-select" id="campusSelector" 
+                            asp-items="@(ViewBag.Campuses as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)">
+                        <option value="">-- Select Campus --</option>
+                    </select>
+                    <span asp-validation-for="CampusId" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <hr />
+            <h6 class="text-secondary mb-3 fw-bold">Role-Specific Details</h6>
+
+            <!-- ROLE-SPECIFIC DYNAMIC FIELDS CONTAINER -->
+            <div id="dynamicFieldsContainer" class="bg-light p-3 rounded mb-3 border">
+                
+                <!-- Student Fields -->
+                <div id="studentFields" class="role-section">
+                    <div class="mb-0">
+                        <label asp-for="StudentNumber" class="form-label fw-semibold"></label>
+                        <!-- 9 DIGIT RESTRICTION APPLIED HERE -->
+                        <input asp-for="StudentNumber" id="studentNumberInput" type="text" class="form-control" placeholder="e.g. 223000801" 
+                               pattern="[0-9]{9}" maxlength="9" title="Please enter exactly 9 digits"
+                               oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 9);" />
+                        <span asp-validation-for="StudentNumber" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <!-- Finance Fields -->
+                <div id="financeFields" class="role-section d-none">
+                    <div class="mb-0">
+                        <label asp-for="DepartmentId" class="form-label fw-semibold"></label>
+                        <!-- THE FIX: Casting ViewBag to IEnumerable<SelectListItem> -->
+                        <select asp-for="DepartmentId" class="form-select" 
+                                asp-items="@(ViewBag.Departments as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)">
+                            <option value="">-- Select Department --</option>
+                        </select>
+                        <span asp-validation-for="DepartmentId" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <!-- SRC Admin Fields -->
+                <div id="srcAdminFields" class="role-section d-none">
+                    <div class="row">
+                        <div class="col-md-6 mb-0">
+                            <label asp-for="TermStart" class="form-label fw-semibold"></label>
+                            <input asp-for="TermStart" type="date" class="form-control" />
+                            <span asp-validation-for="TermStart" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6 mb-0">
+                            <label asp-for="TermEnd" class="form-label fw-semibold"></label>
+                            <input asp-for="TermEnd" type="date" class="form-control" />
+                            <span asp-validation-for="TermEnd" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- IT Admin Fields -->
+                <div id="itAdminFields" class="role-section d-none">
+                    <p class="text-muted mb-0 small">No additional details required for IT Administrators.</p>
+                </div>
+            </div>
+
+            <hr />
+            <h6 class="text-secondary mb-3 fw-bold">Account Security</h6>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label asp-for="Username" class="form-label"></label>
+                    <input asp-for="Username" class="form-control" />
+                    <span asp-validation-for="Username" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label asp-for="Password" class="form-label"></label>
+                    <div class="input-group">
+                        <input asp-for="Password" id="registerPassword" type="password" class="form-control" />
+                        <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('registerPassword', 'eyeRegPass')">
+                            <i class="bi bi-eye-slash" id="eyeRegPass"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label asp-for="ConfirmPassword" class="form-label"></label>
+                    <div class="input-group">
+                        <input asp-for="ConfirmPassword" id="registerConfirmPassword" type="password" class="form-control" />
+                        <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('registerConfirmPassword', 'eyeRegConfirm')">
+                            <i class="bi bi-eye-slash" id="eyeRegConfirm"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-success w-100 py-2 fw-semibold mt-3">Register Account</button>
+            <div class="text-center mt-3">
+                <a asp-action="Login" class="text-decoration-none small">Already have an account? Sign In</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        toggleRoleFields();
+    });
+
+    function toggleRoleFields() {
+        const role = document.getElementById('roleSelector').value;
+        const studentNumberInput = document.getElementById('studentNumberInput');
+        
+        document.querySelectorAll('.role-section').forEach(el => el.classList.add('d-none'));
+        if(studentNumberInput) studentNumberInput.removeAttribute('required');
+
+        if (role === 'Student') {
+            document.getElementById('studentFields').classList.remove('d-none');
+            if(studentNumberInput) studentNumberInput.setAttribute('required', 'required');
+        } else if (role === 'Finance') {
+            document.getElementById('financeFields').classList.remove('d-none');
+        } else if (role === 'SRCAdmin') {
+            document.getElementById('srcAdminFields').classList.remove('d-none');
+        } else if (role === 'ITAdmin') {
+            document.getElementById('itAdminFields').classList.remove('d-none');
+        }
+    }
+
+    function loadCampuses() {
+        const universityId = document.getElementById('universitySelector').value;
+        const campusSelect = document.getElementById('campusSelector');
+
+        campusSelect.innerHTML = '<option value="">-- Select Campus --</option>';
+        if (!universityId) return;
+
+        fetch(`/Account/GetCampusesByUniversity?universityId=${universityId}`)
+            .then(res => res.json())
+            .then(data => {
+                data.forEach(campus => {
+                    const opt = document.createElement('option');
+                    opt.value = campus.value;
+                    opt.textContent = campus.text;
+                    campusSelect.appendChild(opt);
+                });
+            })
+            .catch(err => console.error('Failed to fetch campuses:', err));
+    }
+
+    function togglePasswordVisibility(inputId, iconId) {
+        const inputElem = document.getElementById(inputId);
+        const iconElem = document.getElementById(iconId);
+        if (inputElem && iconElem) {
+            if (inputElem.type === "password") {
+                inputElem.type = "text";
+                iconElem.classList.remove("bi-eye-slash");
+                iconElem.classList.add("bi-eye");
+            } else {
+                inputElem.type = "password";
+                iconElem.classList.remove("bi-eye");
+                iconElem.classList.add("bi-eye-slash");
+            }
+        }
+    }
+</script>
