@@ -36,5 +36,5 @@ Follow these steps to get the application running on your local machine.
 
 **1. Clone the repository:**
 ```bash
-git clone https://github.com/yourusername/student-food-parcel-app.git
+git clone https://github.com/siyabonga145/student-food-parcel-app.git
 cd student-food-parcel-app
