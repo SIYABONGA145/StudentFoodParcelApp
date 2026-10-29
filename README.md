@@ -18,7 +18,7 @@ The Student Food Parcel App is designed to assist institutions in managing food 
 
 * **Framework:** ASP.NET Core MVC (.NET 9)
 * **ORM:** Entity Framework Core
-* **Database:** [Insert your database here, e.g., SQL Server / PostgreSQL / SQLite]
+* **Database:** Microsoft SQL Server
 * **Authentication:** ASP.NET Core Identity
 
 ## 📋 Prerequisites
@@ -28,7 +28,7 @@ Before running this project, ensure you have the following installed on your mac
 * [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 * [Entity Framework Core CLI Tools](https://learn.microsoft.com/en-us/ef/core/cli/dotnet) 
   * Install via terminal: `dotnet tool install --global dotnet-ef`
-* [Insert your database name, e.g., Microsoft SQL Server] running locally or remotely.
+* Microsoft SQL Server (and SQL Server Management Studio) running locally or remotely.
 
 ## 💻 How to Run This Project Locally
 
