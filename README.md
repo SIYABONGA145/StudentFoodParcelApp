@@ -36,8 +36,8 @@ Follow these steps to get the application running on your local machine.
 
 **1. Clone the repository:**
 ```bash
-git clone https://github.com/siyabonga145/student-food-parcel-app.git
-cd student-food-parcel-app
+git clone https://github.com/SIYABONGA145/StudentFoodParcelApp.git
+cd StudentFoodParcelApp
 2. Set your database connection string using the .NET Secret Manager:
 
 bash
