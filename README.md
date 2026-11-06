@@ -56,6 +56,8 @@ Once the application is running, open your browser and navigate to the local URL
 🔐 Default Login Credentials
 The database includes seed data for testing the different user roles. Use the following accounts to log in:
 
+Note: These are seed data credentials for local testing and demonstration purposes only
+
 Role	Email	Password
 Admin	admin@example.com	Admin123!
 Student	student@example.com	Student123!
