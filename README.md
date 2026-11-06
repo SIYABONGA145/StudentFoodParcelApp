@@ -72,7 +72,5 @@ text
 ├── Services/         # Business logic (e.g., QR code generation)
 ├── wwwroot/          # Static files (CSS, JS, images)
 └── Program.cs        # Application entry point and service configuration
-📄 License
-This project is licensed under the MIT License.
 
 
